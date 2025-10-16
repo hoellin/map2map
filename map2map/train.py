@@ -18,6 +18,10 @@ from .models import narrow_cast, resample
 from .utils import import_attr, load_model_state_dict, plt_slices, plt_power
 
 
+from wip3m.logger import getCustomLogger, INDENT, UNINDENT
+
+logger_custom = getCustomLogger(__name__)
+
 ckpt_link = 'checkpoint.pt'
 
 
@@ -161,7 +165,8 @@ def gpu_worker(local_rank, node, args):
 
         start_epoch = state['epoch']
 
-        load_model_state_dict(model.module, state['model'],
+        real_model = model.module if hasattr(model, 'module') else model
+        load_model_state_dict(real_model, state['model'],
                               strict=args.load_state_strict)
 
         if 'optimizer' in state:
@@ -174,7 +179,7 @@ def gpu_worker(local_rank, node, args):
         if rank == 0:
             min_loss = state['min_loss']
 
-            print('state at epoch {} loaded from {}'.format(
+            logger_custom.info('state at epoch {} loaded from {}'.format(
                 state['epoch'], args.load_state), flush=True)
 
         del state
@@ -189,7 +194,7 @@ def gpu_worker(local_rank, node, args):
         logger = SummaryWriter()
 
     if rank == 0:
-        print('pytorch {}'.format(torch.__version__))
+        logger_custom.info('pytorch {}'.format(torch.__version__))
         pprint(vars(args))
         sys.stdout.flush()
 
@@ -214,9 +219,10 @@ def gpu_worker(local_rank, node, args):
             if min_loss is None or epoch_loss[2] < min_loss:
                 min_loss = epoch_loss[2]
 
+            real_model = model.module if hasattr(model, 'module') else model
             state = {
                 'epoch': epoch + 1,
-                'model': model.module.state_dict(),
+                'model': real_model.state_dict(),
                 'optimizer': optimizer.state_dict(),
                 'scheduler': scheduler.state_dict(),
                 'rng': torch.get_rng_state(),
@@ -258,22 +264,23 @@ def train(epoch, loader, model, criterion,
             extra = extra.to(device, non_blocking=True)
 
         output = model(input, style)
-        if batch <= 5 and rank == 0:
-            print('##### batch :', batch)
-            print('style shape :', style.shape)
-            print('input shape :', input.shape)
-            print('output shape :', output.shape)
-            print('target shape :', target.shape)
+        # if batch <= 5 and rank == 0:
+        #     logger_custom.info('##### batch :', batch)
+        #     logger_custom.info('style shape :', style.shape)
+        #     logger_custom.info('input shape :', input.shape)
+        #     logger_custom.info('output shape :', output.shape)
+        #     logger_custom.info('target shape :', target.shape)
 
-        if (hasattr(model.module, 'scale_factor')
-                and model.module.scale_factor != 1):
-            input = resample(input, model.module.scale_factor, narrow=False)
+        real_model = model.module if hasattr(model, 'module') else model
+        if (hasattr(real_model, 'scale_factor')
+                and real_model.scale_factor != 1):
+            input = resample(input, real_model.scale_factor, narrow=False)
         if extra is None:
             input, output, target = narrow_cast(input, output, target)
         else:
             input, output, target, extra = narrow_cast(input, output, target, extra)
-        if batch <= 5 and rank == 0:
-            print('narrowed shape :', output.shape)
+        # if batch <= 5 and rank == 0:
+        #     logger_custom.info('narrowed shape :', output.shape)
 
         if extra is None:
             loss = criterion(output, target)
@@ -356,9 +363,10 @@ def validate(epoch, loader, model, criterion, logger, device, args):
 
             output = model(input, style)
 
-            if (hasattr(model.module, 'scale_factor')
-                    and model.module.scale_factor != 1):
-                input = resample(input, model.module.scale_factor, narrow=False)
+            real_model = model.module if hasattr(model, 'module') else model
+            if (hasattr(real_model, 'scale_factor')
+                    and real_model.scale_factor != 1):
+                input = resample(input, real_model.scale_factor, narrow=False)
             if extra is None:
                 input, output, target = narrow_cast(input, output, target)
             else:

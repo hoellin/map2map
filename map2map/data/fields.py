@@ -9,6 +9,10 @@ from torch.utils.data import Dataset
 from ..utils import import_attr
 from . import norms
 
+from wip3m.logger import getCustomLogger, INDENT, UNINDENT
+
+logger_custom = getCustomLogger(__name__)
+
 
 class FieldDataset(Dataset):
     """Dataset of lists of fields.
@@ -72,8 +76,8 @@ class FieldDataset(Dataset):
         if (self.extra_files is not None) and (len(self.style_files) != len(self.extra_files)):
             raise ValueError('number of style and extra files do not match')
         self.nfile = len(self.in_files)
-        
-        print('Number of files:', self.nfile)
+
+        logger_custom.info('Number of files: {}'.format(self.nfile))
 
         if self.nfile == 0:
             raise FileNotFoundError('file not found for {}'.format(in_patterns))

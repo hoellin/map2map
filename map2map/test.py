@@ -12,6 +12,9 @@ from . import models
 from .models import narrow_cast
 from .utils import import_attr, load_model_state_dict
 
+from wip3m.logger import getCustomLogger, INDENT, UNINDENT
+
+logger_custom = getCustomLogger(__name__)
 
 def test(args):
     if torch.cuda.is_available():
@@ -30,7 +33,7 @@ def test(args):
 
         torch.set_num_threads(args.num_threads)
 
-    print('pytorch {}'.format(torch.__version__))
+    logger_custom.info('pytorch {}'.format(torch.__version__))
     pprint(vars(args))
     sys.stdout.flush()
 
@@ -78,7 +81,7 @@ def test(args):
 
     state = torch.load(args.load_state, map_location=device)
     load_model_state_dict(model, state['model'], strict=args.load_state_strict)
-    print('model state at epoch {} loaded from {}'.format(
+    logger_custom.info('model state at epoch {} loaded from {}'.format(
         state['epoch'], args.load_state))
     del state
 
@@ -94,19 +97,19 @@ def test(args):
 
             output = model(input, style)
             if i < 5:
-                print('##### sample :', i)
-                print('style shape :', style.shape)
-                print('input shape :', input.shape)
-                print('output shape :', output.shape)
-                print('target shape :', target.shape)
+                logger_custom.info('##### sample :', i)
+                logger_custom.info('style shape :', style.shape)
+                logger_custom.info('input shape :', input.shape)
+                logger_custom.info('output shape :', output.shape)
+                logger_custom.info('target shape :', target.shape)
 
             input, output, target = narrow_cast(input, output, target)
             if i < 5:
-                print('narrowed shape :', output.shape, flush=True)
+                logger_custom.info('narrowed shape :', output.shape, flush=True)
 
             loss = criterion(output, target)
 
-            print('sample {} loss: {}'.format(i, loss.item()))
+            logger_custom.info('sample {} loss: {}'.format(i, loss.item()))
 
             #if args.in_norms is not None:
             #    start = 0
