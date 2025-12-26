@@ -8,7 +8,8 @@ from matplotlib.colors import Normalize, LogNorm, SymLogNorm
 from matplotlib.cm import ScalarMappable
 plt.rc('text', usetex=False)
 
-from ..models import lag2eul, power
+from ..models.power import power
+from ..models import lag2eul
 
 
 def quantize(x):
@@ -146,7 +147,7 @@ def plt_power(*fields, dis=None, label=None, **kwargs):
 
         ks, Ps = [], []
         for field in fields:
-            k, P, _ = power.power(field)
+            k, P, _ = power(field)
             ks.append(k)
             Ps.append(P)
 

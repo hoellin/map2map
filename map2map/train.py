@@ -264,12 +264,6 @@ def train(epoch, loader, model, criterion,
             extra = extra.to(device, non_blocking=True)
 
         output = model(input, style)
-        # if batch <= 5 and rank == 0:
-        #     logger_custom.info('##### batch :', batch)
-        #     logger_custom.info('style shape :', style.shape)
-        #     logger_custom.info('input shape :', input.shape)
-        #     logger_custom.info('output shape :', output.shape)
-        #     logger_custom.info('target shape :', target.shape)
 
         real_model = model.module if hasattr(model, 'module') else model
         if (hasattr(real_model, 'scale_factor')
@@ -279,8 +273,6 @@ def train(epoch, loader, model, criterion,
             input, output, target = narrow_cast(input, output, target)
         else:
             input, output, target, extra = narrow_cast(input, output, target, extra)
-        # if batch <= 5 and rank == 0:
-        #     logger_custom.info('narrowed shape :', output.shape)
 
         if extra is None:
             loss = criterion(output, target)
@@ -328,14 +320,6 @@ def train(epoch, loader, model, criterion,
         )
         logger.add_figure('fig/train/power/lag', fig, global_step=epoch+1)
         fig.clf()
-
-        #fig = plt_power(1.0,
-        #    dis=[input, output[:, skip_chan:], target[:, skip_chan:]],
-        #    label=['in', 'out', 'tgt'],
-        #    **args.misc_kwargs,
-        #)
-        #logger.add_figure('fig/train/power/eul', fig, global_step=epoch+1)
-        #fig.clf()
 
     return epoch_loss
 
